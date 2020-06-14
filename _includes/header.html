@@ -25,6 +25,9 @@
         <!-- About -->
         <a class="page-link" href="{{ site.baseurl | prepend: site.url }}/">about</a>
 
+        <!-- CV link -->
+        <a class="page-link" href="{{ '/assets/pdf/CV.pdf' | prepend: site.baseurl | prepend: site.url }}">CV</a>
+
         <!-- Blog -->
         <a class="page-link" href="{{ '/blog/' | prepend: site.baseurl | prepend: site.url }}">blog</a>
 
@@ -34,9 +37,6 @@
             <a class="page-link" href="{{ page.url | prepend: site.baseurl | prepend: site.url }}">{{ page.title }}</a>
           {% endif %}
         {% endfor %}
-
-        <!-- CV link -->
-        <!-- <a class="page-link" href="{{ '/assets/pdf/CV.pdf' | prepend: site.baseurl | prepend: site.url }}">vitae</a> -->
 
       </div>
     </nav>
