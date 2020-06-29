@@ -20,7 +20,7 @@ Some of the most useful operations we get with keyed data comes from using it to
 By default, when a RDD is read from textfile or HDFS, it follows the partitioning scheme of hadoop filesystem. As seen above, a pre-requisite for join is co-location.This operation will hash all the keys of both datasets, sending elements with the same key hash across the network to the same machine, and then join together the elements with the same key on that machine. 
 
 For example, *userData* and *events* are shuffled causing heavy network traffic.
-![](https://learning.oreilly.com/library/view/learning-spark/9781449359034/assets/lnsp_0404.png)
+<img src="https://learning.oreilly.com/library/view/learning-spark/9781449359034/assets/lnsp_0404.png" width="70%" height="50%"/>
 
 This operation is also called reduce-side join because the actual join process happens in the reduce phase. It follows the traditional map-shuffle-reduce flow.
 
@@ -35,7 +35,7 @@ Note:
 
 <script src="https://gist.github.com/tejaslodaya/26b8c25cbf222efc6d9d51ac7d8bfb64.js"></script>
 
-![](https://learning.oreilly.com/library/view/learning-spark/9781449359034/assets/lnsp_0405.png)
+<img src="https://learning.oreilly.com/library/view/learning-spark/9781449359034/assets/lnsp_0405.png" width="70%" height="50%"/>
 
 Functions other than *join* which take partitioning as advantage are *cogroup(), groupWith(), leftOuterJoin(), rightOuterJoin(), groupByKey(), reduceByKey(), combineByKey()*, and *lookup()*
 
@@ -53,7 +53,7 @@ ShuffleHashJoin can be avoided in the below scenarios
 	
 	Many spark operations automatically result in an RDD with known partitioning information and join takes advantage of this information. For example, sortByKey and groupByKey result in a partitioned RDD, with a valid non-default partitioner.  This behaves the same way as of `partitionBy` in [(2)](#partitionBy)
 		
-	![](https://blog.cloudera.com/wp-content/uploads/2014/03/spark-devs1.png)
+	![](https://web.archive.org/web/20190325153819if_/https://blog.cloudera.com/wp-content/uploads/2014/03/spark-devs1.png)
 	
 	Above, *B* is not shuffled when joined with *F* because *groupBy* is applied on *B*. 
 

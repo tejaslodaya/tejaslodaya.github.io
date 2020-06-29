@@ -25,7 +25,8 @@ The Kalman filter is essentially a set of mathematical equations that implement 
 
 Mathematically, $$F_N =z_i \mid 1 \leqslant i \leqslant N$$ where k < N (smoothing), k = N (filtering) and k > N (prediction)
 
-![_config.yml]({{ site.baseurl }}/assets/img/kalman/smooth_filter_forecast.png)
+<img src="/assets/img/kalman/smooth_filter_forecast.png" alt="smooth_filter_forecast" width="70%" height="70%"/>
+
 
 <h3 id = 'why'> Why "filter"? </h3>
 ---
@@ -54,8 +55,9 @@ $$\hat{x_k^\prime}$$ is a priori state estimate at step `k` given knowledge of t
 	1. They belong to a class of problems called **predictor-corrector** algorithms, where they proceed in two steps:
 		* Time update step: They are responsible for projecting forward (in time) the current state and error covariance estimates to obtain the a priori estimates for the next time step.
 		* Measurement update step: They are responsible for the feedback—i.e. for incorporating a new measurement into the a priori estimate to obtain an improved a posteriori estimate
+
 		![_config.yml]({{ site.baseurl }}/assets/img/kalman/cycle_update.png)
-		![_config.yml]({{ site.baseurl }}/assets/img/kalman/update_equations.png)
+		<img src="/assets/img/kalman/update_equations.png" alt="update_equations" width="70%" height="70%"/>
 	2. They belong to the class of **linear methods**, since the underlying filtering model is linear and the distributions are assumed Gaussian
 	3. They are **optimal estimators**, since they infer parameters of interest from indirect, inaccurate and uncertain observations.
 	4. They are **recursive** and requires only the last "best guess", rather than the entire history, of a system's state to calculate a new state.
@@ -75,19 +77,19 @@ To begin with the simulation, i.e <img src = "https://i.imgur.com/O5C0mu7.png" h
 
 We will carry out 3 simulations, with $$R = 0.01, R = 1, R = 0.00001 $$ 
 
-##### Simulation 1
+#### Simulation 1
 ---
 In the first simulation we fixed the measurement variance at $$R = (0.1)^2 = 0.01$$. Because this is the “true” measurement error variance, we would expect the “best” performance in terms of balancing responsiveness and estimate variance. It will balance itself out in the second and third simulation (takes time for stabilization). 
 
 ![_config.yml]({{ site.baseurl }}/assets/img/kalman/sim1.png)
 
-##### Simulation 2
+#### Simulation 2
 ---
 If the measurement covariance(R) is high, (R = 1) it was "slower" to respond to the measurements (similar to learning rate), resulting in reduced estimate variance (smooth curve)
 
 ![_config.yml]({{ site.baseurl }}/assets/img/kalman/sim2.png)
 	
-##### Simulation 3
+#### Simulation 3
 ---
 In the below figure, the filter was told the measurement variance is (R = 0.00001), it was very "quick" to believe the noisy measurements
 

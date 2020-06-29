@@ -19,7 +19,8 @@ Spark is a fast and general purpose cluster computing system hosted by Apache fo
 
 <h3 id="latency"> Latency</h3>
 
-![_config.yml]({{ site.baseurl }}/assets/img/groupbykey/latency.png)
+<img src="/assets/img/groupbykey/latency.png" alt="latency" width="90%" height="90%"/>
+
 
 From the above diagram, 
 
@@ -50,7 +51,7 @@ Co-location significantly increases the performance of data-intensive applicatio
 ---
 This method brings all the keys belonging to the same group on one of the executor nodes by partitioning the hash value and pulling the result into memory to group as iterators. Each record whose key has the same hash value must live in memory on a single machine (co-location). In the word-count example, groupByKey results in same words shuffled to single partition. There's no parallelism here and is strictly a sequential operation.
 
-![](https://databricks.gitbooks.io/databricks-spark-knowledge-base/content/assets/img/group_by.png)
+![](https://databricks.gitbooks.io/databricks-spark-knowledge-base/content/images/group_by.png)
 
 Disadvantages:
 
@@ -65,7 +66,7 @@ Instead of sending all the data over the network, this method reduces it as smal
 
 Taking a look at the [source code](https://github.com/apache/spark/blob/8cb23a1f9a3ed08e57865bcb6cc1cc7902881073/python/pyspark/rdd.py#L1466), *reduceByKey* is a specialization of *combineByKey* where, *mergeValues* and *mergeCombiners* are the same function.
 
-![](https://databricks.gitbooks.io/databricks-spark-knowledge-base/content/assets/img/reduce_by.png)
+![](https://databricks.gitbooks.io/databricks-spark-knowledge-base/content/images/reduce_by.png)
 
 <h3 id="partitionby"> Even faster reduceByKey </h3>
 ---

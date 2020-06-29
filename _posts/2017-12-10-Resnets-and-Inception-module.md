@@ -22,34 +22,34 @@ A huge barrier to training them is vanishing gradients: very deep networks often
 
 During training, you might therefore see the magnitude (or norm) of the gradient for the earlier layers decrease to zero very rapidly as training proceeds:
 
-![_config.yml]({{ site.baseurl }}/assets/img/resnet/image1.png)
+<img src="/assets/img/resnet/image1.png" alt="image1" width="70%" height="70%"/>
 
 **TLDR**: The speed of learning decreases very rapidly for the early layers as the network trains, due to vanishing gradient.
 
 <h3 id="resnetblock">Resnet blocks</h3>
 ---
-![_config.yml]({{ site.baseurl }}/assets/img/resnet/image2.png)
+<img src="/assets/img/resnet/image2.png" alt="image2" width="70%" height="70%"/>
 
 Three reasons why resnet blocks work:
 
 1. The shortcut makes it very easy for one of the blocks to learn an identity function (where the network learns to behave exaclty like the one without skip-connection). So, ResNet blocks can be stacked on top of each other with little risk of harming training set performance. In plain nets, as we go deeper and deeper in the network, the layers fail to learn even the basic identity function and tend to perform worse.
 2. The shortcut or "skip-connection" allows the gradient to be directly back-propagated to earlier layers which reduces vanishing gradient problem a bit.
-3. Doing well on the training set is a pre-requisite for doing well on the hold-out crossvalidation set. In plain nets, as the number of layers increase, the training error increases significantly after some point. Skip-connections solve this problem where training error strictly decreases. 
-![_config.yml]({{ site.baseurl }}/assets/img/resnet/image3.png)
+3. Doing well on the training set is a pre-requisite for doing well on the hold-out crossvalidation set. In plain nets, as the number of layers increase, the training error increases significantly after some point. Skip-connections solve this problem where training error strictly decreases.
+ <img src="/assets/img/resnet/image3.png" alt="image3" width="70%" height="70%"/>
 
 <h3 id="resnet50">Resnet 50</h3>
 ---
 Resnet 50 is divided into 5 stages.
 
-![_config.yml]({{ site.baseurl }}/assets/img/resnet/image4.png)
+<img src="/assets/img/resnet/image4.png" alt="image4" width="70%" height="70%"/>
 
 which comprises of identity block:
 
-![_config.yml]({{ site.baseurl }}/assets/img/resnet/image5.png)
+<img src="/assets/img/resnet/image5.png" alt="image5" width="70%" height="70%"/>
 
 and convolution block:
 
-![_config.yml]({{ site.baseurl }}/assets/img/resnet/image6.png)
+<img src="/assets/img/resnet/image6.png" alt="image6" width="70%" height="70%"/>
 
 Identity block is used when the input(x) and output have the same dimensions.
 Convolution block is used when the input(x) and output don't have the same dimensions. Shortcut path is used to change the dimension of input to that of the output.
@@ -59,7 +59,7 @@ Implementation of Resnet-50 on SIGNS dataset can be found [here](https://github.
 <h3 id="inceptionmodule">Inception module</h3>
 ---
 
-*   <h6 id="1x1"> Network in Network Layers (1x1 convolution) </h6>
+*   <h4 id="1x1"> Network in Network Layers (1x1 convolution) </h4>
 	Now, at first look, you might wonder why this type of layer would even be helpful since receptive 	fields are normally larger than the space they map to. However, we must remember that these 1x1 	convolutions span a certain depth, so we can think of it as a 1 x 1 x N convolution where N is the 	number of filters applied in the layer. They are also used as a bottle-neck layer which internally is 	used to decrease the number of parameters to be trained, and hence reduces the total computation time.
 	
 	**Dimensionality reduction:**
@@ -67,19 +67,20 @@ Implementation of Resnet-50 on SIGNS dataset can be found [here](https://github.
 	1.  Height and Width : Max-pooling
 	2.  Depth : 1x1 convolution
 	
-	![_config.yml]({{ site.baseurl }}/assets/img/cnn_images/1738850.png?height=400)
+	<img src="/assets/img/cnn_images/1738850.png" alt="1738850" width="70%" height="70%"/>
 
-*   <h6 id="computationtime"> Computation time </h6>
+*   <h4 id="computationtime"> Computation time </h4>
 	Total computation time = (Number of muliplies needed to compute one output value) x (Number of output values that need to be computed)
 	
 	Consider two scenarios:
 	
-	![_config.yml]({{ site.baseurl }}/assets/img/resnet/image7.png)
+	<img src="/assets/img/resnet/image7.png" alt="image7" width="70%" height="70%"/>
 	
 	Introducing a 1x1 convolution brings down the total computation time by 10x
 	
-*   <h6 id="inceptionblock"> Inception block </h6>	
-	![_config.yml]({{ site.baseurl }}/assets/img/resnet/image8.png)
+*   <h4 id="inceptionblock"> Inception block </h4>
+
+	<img src="/assets/img/resnet/image8.png" alt="image8" width="70%" height="70%"/>
 	
 	1x1 convolutions before 3x3 and 5x5 are used as a bottleneck layer.
 	
@@ -89,7 +90,7 @@ Implementation of Resnet-50 on SIGNS dataset can be found [here](https://github.
 	
 	Entire inception network comprises of inception blocks as above, stacked after one other
 	
-	![_config.yml]({{ site.baseurl }}/assets/img/resnet/image9.png)
+	<img src="/assets/img/resnet/image9.png" alt="image9" width="70%" height="70%"/>
 
 <h3 id="references"> References </h3>
 ---

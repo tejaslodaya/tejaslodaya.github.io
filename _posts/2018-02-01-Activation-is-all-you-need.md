@@ -55,7 +55,6 @@ A "dead" ReLU always outputs the same value (zero as it happens, but that is not
 
 Solution:  <br>
 Leaky ReLUs are one attempt to fix the “dying ReLU” problem. Instead of the function being zero when x < 0, a leaky ReLU will instead have a small negative slope (of 0.01, or so)
-![](http://heimingx.cn/img/blog/deeplearning/leaky_relu.png)
 
 <h3 id = "references"> References </h3>
 ---
