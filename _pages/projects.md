@@ -1,6 +1,6 @@
 ---
 layout: page
-title: projects
+title: open source
 permalink: /projects/
 description: Handful of open-source projects I am proud of
 ---
