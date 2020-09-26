@@ -17,4 +17,6 @@ I am Tejas, a Senior Machine Learning Engineer at Swiggy, India's largest and mo
 
 I have productionized large-scale machine learning models based on logistic regression, boosting, L2R, LSTM and BERT to accurately sprinkle personalization on top of tens of millions of daily visits in real-time. I also work closely with the platform team to build new features (recently: [tensorflow serving](https://bytes.swiggy.com/deploying-deep-learning-models-at-scale-at-swiggy-tensorflow-serving-on-dsp-ad5da40f7a6c)) and involve in the design and solutioning of platform's capabilities. 
 
-My current research interests are divided into two phases, first at the intersection of databases and ML (pre-modeling phase) to accelerate data exploration, data preprocessing and feature engineering and second, at the intersection of systems and ML (post-modeling phase) to serve models at low-latencies in high-throughput environment.
+My current research interests are divided into two phases, first at the intersection of databases and ML (pre-modeling phase) to accelerate data exploration, data preprocessing and feature engineering and second, at the intersection of systems and ML (post-modeling phase) to build high-performance, scalable storage systems and model runtime that provide low latencies in high-throughput environment.
+
+
