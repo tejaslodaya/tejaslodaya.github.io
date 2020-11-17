@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Tejas Lodaya | What is Kullback-Leibler divergence?</title>
+  <meta name="description" content="Tejas Lodaya">
+
+  
+
+  <link rel="shortcut icon" href="/assets/img/favicon.ico">
+
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/blog/2017/What-is-KL-divergence/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    
+    <span class="site-title">
+        
+        <strong>Tejas</strong> Lodaya
+    </span>
+    
+
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+      <div class="trigger">
+        <!-- About -->
+        <a class="page-link" href="/">about</a>
+
+        <!-- CV link -->
+        <a class="page-link" href="/assets/pdf/CV.pdf">CV</a>
+
+        <!-- Blog -->
+        <a class="page-link" href="/blog/">blog</a>
+
+        <!-- Pages -->
+        
+          
+        
+          
+        
+          
+        
+          
+            <a class="page-link" href="/projects/">open source</a>
+          
+        
+          
+        
+          
+        
+
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">What is Kullback-Leibler divergence?</h1>
+    <p class="post-meta">December 19, 2017</p>
+  </header>
+
+  <article class="post-content">
+    <ul>
+  <li><a href="#background">Background</a>
+    <ul>
+      <li><a href="#entropy">Entropy</a></li>
+      <li><a href="#infogain">Information Gain</a></li>
+      <li><a href="#surprise">Surprise Factor</a></li>
+    </ul>
+  </li>
+  <li><a href="#xentropy">Cross Entropy</a></li>
+  <li><a href="#kldivergence">Kullback - Leiber divergence</a></li>
+  <li><a href="#facts">Facts about KL divergence</a></li>
+  <li><a href="#usage">Usage in Machine Learning</a></li>
+  <li><a href="#references">References</a></li>
+</ul>
+
+<h3 id="background">Background</h3>
+<hr />
+
+<ul>
+  <li>
+    <h6 id="entropy"> Entropy </h6>
+    <p>Entropy is the expected amount of information when an event is drawn from a distribution. Distributions that are nearly deterministic (where the outcome is nearly certain) have low entropy; distributions that are closer to uniform have high entropy. Shannon entropy is given by:</p>
+
+    <p><img src="https://render.githubusercontent.com/render/math?math=H(x)%20=%20%5Cmathbb{E}_{x~P}[I(x)]%20=%20-%5Cmathbb{E}_{x~P}[log%20P(x)]%20=%20-%5Csum_{n=1}^{k}%20P(x)%20*%20log(P(x))&amp;mode=display" alt="" /></p>
+
+    <p>The expectation in this case is probability-weighted average on all possible k states.</p>
+  </li>
+  <li>
+    <h6 id="infogain"> Information Gain </h6>
+    <p>Information gain is indirectly proportional to the probability of the event. An event having a probability of occurrence 1 has no information at all (it is certain to happen). An event having 0 probability of occurrence contains the most information.</p>
+
+    <p><img src="https://render.githubusercontent.com/render/math?math=I(x)%20=%20-log%20P(x)&amp;mode=display" alt="" /></p>
+
+    <p>Information gained when an unfair coin is tossed is less than information gained on a fair coin, since unfair coin’s outcome is the unfair side most of the times.</p>
+  </li>
+  <li>
+    <h6 id="surprise"> Surprise Factor </h6>
+    <p>The surprise factor is directly proportional to information gain. The most probable event will have the least surprise factor (eg: sun rises in the east). Least probable event will have the most surprise factor (eg: sudden death of xyz)</p>
+  </li>
+</ul>
+
+<h3 id="xentropy"> Cross Entropy </h3>
+<hr />
+
+<p>The expected amount of information gained when a scheme optimised for one distribution is applied to another distribution is quantified by cross-entropy.</p>
+
+<p>Amount of information gained when you think I’m tossing a fair coin but secretly, I’m tossing an unfair coin is given by <img src="https://render.githubusercontent.com/render/math?math=H(P_{unfair},P_{fair})%20=%20-%5Cmathbb{E}_{x~P_{unfair}}%20log%20P_{fair}(x)&amp;mode=display" alt="" /></p>
+
+<p>On the other hand, amount of information gained when you think I’m tossing an unfair coin but secretly, I’m tossing a fair coin is given by <img src="https://render.githubusercontent.com/render/math?math=H(P_{fair},P_{unfair})%20=%20-%5Cmathbb{E}_{x~P_{fair}}%20log%20P_{unfair}(x)&amp;mode=display" alt="" /></p>
+
+<p>In any scenario <img src="https://render.githubusercontent.com/render/math?math=H(P_{fair},P_{unfair})%20%3E%20H(P_{unfair},P_{fair})&amp;mode=display" alt="" />,
+because whenever the unfair coin comes up with anything other than the unfair side, you’re pretty surprised. But when I toss the fair coin, it comes up something other than unfair side most of the time – so if you think I’m tossing the unfair coin but I’m not, you’re pretty surprised most of the time!</p>
+
+<h3 id="kldivergence"> Kullback - Leiber divergence </h3>
+<hr />
+
+<p>The penalty charged when one optimization scheme is used on other distribution is quantified by KL divergence
+<img src="https://render.githubusercontent.com/render/math?math=D_{KL}(P||Q)=%20%5Cmathbb{E}_{x~P}%20[%5Clog%20%5Cfrac{P(x)}{Q(x)}]%20=%20%20%5Cmathbb{E}_{x~P}[%5Clog%20P(x)%20-%20%5Clog%20Q(x)]" alt="" /></p>
+
+<p>In other words, the extra information gained when I toss a fair coin but you mistakenly believe I’m tossing an unfair coin than if I toss the fair coin and you correctly believe I’m doing so.</p>
+
+<h3 id="facts"> Facts about KL divergence </h3>
+<hr />
+
+<ul>
+  <li>KL divergence is non-negative</li>
+  <li>KL divergence is 0 if and only if P and Q are of the same distribution (incase of discrete variables), or equal “almost everywhere” (incase of continuous variables)</li>
+  <li>It is often conceptualized as measuring distance between distributions, but it is not actually a distance measure since it doesn’t follow the triangle law (not commutative)</li>
+</ul>
+
+<h3 id="usage"> Usage in Machine Learning </h3>
+<hr />
+
+<ol>
+  <li>KL divergence is used in ML to measure the information loss in the fitted model relative to that in the reference model</li>
+  <li>It is widely used in variational inference, where an optimization problem is constructed that aims at minimizing the KL-divergence between the intractable target distribution <code class="language-plaintext highlighter-rouge">P</code> and a sought element <code class="language-plaintext highlighter-rouge">Q</code> from a class of tractable distributions.</li>
+</ol>
+
+<h3 id="references"> References </h3>
+<hr />
+<ul>
+  <li><a href="https://www.quora.com/What-is-a-good-laymans-explanation-for-the-Kullback-Leibler-divergence">https://www.quora.com/What-is-a-good-laymans-explanation-for-the-Kullback-Leibler-divergence</a></li>
+  <li><a href="http://www.deeplearningbook.org/contents/prob.html">http://www.deeplearningbook.org/contents/prob.html</a></li>
+</ul>
+
+  </article>
+
+  
+
+</div>
+
+      </div>
+    </div>
+
+    <!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<!-- Load Common JS -->
+<script src="/assets/js/common.js"></script>
+
+
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js"></script>
+<script src="/assets/js/katex.js"></script>
+
+
+
+
+<!-- Include custom icon fonts -->
+<link rel="stylesheet" href="/assets/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/assets/css/academicons.min.css">
+
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-106825454-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+
+  </body>
+
+</html>

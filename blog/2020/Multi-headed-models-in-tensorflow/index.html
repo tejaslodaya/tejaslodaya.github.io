@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Tejas Lodaya | Multi-headed models in Tensorflow</title>
+  <meta name="description" content="Tejas Lodaya">
+
+  
+
+  <link rel="shortcut icon" href="/assets/img/favicon.ico">
+
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/blog/2020/Multi-headed-models-in-tensorflow/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    
+    <span class="site-title">
+        
+        <strong>Tejas</strong> Lodaya
+    </span>
+    
+
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+      <div class="trigger">
+        <!-- About -->
+        <a class="page-link" href="/">about</a>
+
+        <!-- CV link -->
+        <a class="page-link" href="/assets/pdf/CV.pdf">CV</a>
+
+        <!-- Blog -->
+        <a class="page-link" href="/blog/">blog</a>
+
+        <!-- Pages -->
+        
+          
+        
+          
+        
+          
+        
+          
+            <a class="page-link" href="/projects/">open source</a>
+          
+        
+          
+        
+          
+        
+
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Multi-headed models in Tensorflow</h1>
+    <p class="post-meta">September 15, 2020</p>
+  </header>
+
+  <article class="post-content">
+    <ul>
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#why">Why multi-headed models</a></li>
+  <li><a href="#what">What are multi-headed models</a></li>
+  <li><a href="#how">How to implement them</a>
+    <ul>
+      <li><a href="#sum">Summing before minimization</a></li>
+      <li><a href="#disjoint">Disjoint training</a></li>
+      <li><a href="#advantages">Advantages of #2 over #1</a></li>
+    </ul>
+  </li>
+  <li><a href="#references">References</a></li>
+</ul>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>In a typical machine learning lifecycle, DS deploys machine learning models which have close resemblance to each other. These models when deployed in production generate individual APIs for clients to integrate. This approach makes sense if the models are sequential, i.e output of one is passed as input to another, but not for models which are all called at once and are independent of each other. In cases like these, it is suboptimal for clients to integrate with “x” number of APIs. A classic example for this is when you not only want to classify the image, but also want to localize the object and find coordinates of the bounding box around it.</p>
+
+<h3 id="why-multi-headed-models">Why multi-headed models?</h3>
+
+<ol>
+  <li>Reduces the number of calls to DSP, saving network cost and reducing overall latencies.</li>
+  <li>Piggybacks on feature fetches, reducing the resources for inferencing and saving inference cost. (feature fetch happens once rather than “x” times)</li>
+</ol>
+
+<h3 id="what-are-multi-headed-models">What are multi-headed models?</h3>
+
+<p>Every DL model is made up of two components, the backbone network and the head. The backbone is everything except the loss calculation, optimization and evaluation metrics. You can either have multiple heads for a single backbone or multiple heads for multiple backbones.</p>
+
+<p>An example for the former approach is classification with localizalization. If you were to classify the image but also want to localize the object (find the bounding box coordinates around it), you would have a classification head as well as a regression head.</p>
+
+<p><img src="/assets/img/multi_headed/cat.png" alt="cat classification" width="70%" height="50%" /></p>
+
+<p>An example for the latter approach is used in DL mdoels. Input features are the same across all the models, but the backbone and the heads are different for each model.</p>
+
+<p><img src="/assets/img/multi_headed/models.png" alt="models" width="70%" height="50%" /></p>
+
+<p><strong>Constraint</strong> : Input data should remain the same across all the models. Input features can change (to create the input layer), but no filtering across rows is possible. TLDR: Data filtering possible across columns, but not across rows.</p>
+
+<h3 id="how-to-implement-it">How to implement it?</h3>
+
+<p>There are two ways of accomplishing multi-headed models in Tensorflow -</p>
+
+<h4 id="summing-before-minimization">Summing before minimization</h4>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">final_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">loss1</span> <span class="o">+</span> <span class="n">loss2</span><span class="p">)</span>
+<span class="n">train_op</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">train</span><span class="p">.</span><span class="n">AdamOptimizer</span><span class="p">().</span><span class="n">minimize</span><span class="p">(</span><span class="n">final_loss</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Jointly minimizes the combined loss and calculates gradient on the sum.</p>
+
+<h4 id="disjoint-training">Disjoint training</h4>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="n">train_op1</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">train</span><span class="p">.</span><span class="n">AdamOptimizer</span><span class="p">().</span><span class="n">minimize</span><span class="p">(</span><span class="n">loss1</span><span class="p">)</span>
+<span class="n">train_op2</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">train</span><span class="p">.</span><span class="n">AdamOptimizer</span><span class="p">().</span><span class="n">minimize</span><span class="p">(</span><span class="n">loss2</span><span class="p">)</span>
+
+<span class="n">final_train_op</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">group</span><span class="p">(</span><span class="n">train_op1</span><span class="p">,</span> <span class="n">train_op2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Keeps separate gradient accumulators for each loss. <code class="language-plaintext highlighter-rouge">tf.group</code> guarantees when the <code class="language-plaintext highlighter-rouge">final_train_op</code> is finished, both the operations <code class="language-plaintext highlighter-rouge">train_op1</code> and <code class="language-plaintext highlighter-rouge">train_op2</code> should have finished. This creates separate optimizers leading to different backpropagation graphs (within the same tf.Graph), independent loss functions and independent gradient accumulators.</p>
+
+<h3 id="advantages-of-2-over-1">Advantages of #2 over #1</h3>
+
+<ol>
+  <li>No cannibalization takes place when losses are of different magnitudes. Say if modelA has loss = 100, modelB has loss = 0.5, in case of #1, the overall model will start penalizing modelA more and neglect modelB. In case of #2, since accumulators are different, cannibalization effect doesn’t happen.</li>
+  <li>In case of multi-task learning, #2 allows you to define different learning rates to models, thereby “intentionally” giving more importance to one task over the other (task weights)</li>
+</ol>
+
+<h3 id="references">References</h3>
+
+<ol>
+  <li>[Github issue] <a href="https://github.com/tensorflow/tensorflow/issues/15773">How to define multiple loss function and train_op in tf.estimator.EstimatorSpec · Issue #15773 · tensorflow/tensorflow</a>.
+<mark> Refer to the comments by <a href="https://www.linkedin.com/in/mustafa-ispir-66a7b31/">@ispirmustafa</a> who’s the creator of Tensorflow Estimators.</mark></li>
+  <li>[StackOverflow] <a href="https://stackoverflow.com/questions/56004483/what-is-a-multi-headed-model-and-what-exactly-is-a-head-in-a-model">What is a multi-headed model? And what exactly is a ‘head’ in a model?</a></li>
+  <li>[Paper] <a href="https://arxiv.org/abs/1708.02637">[1708.02637] TensorFlow Estimators: Managing Simplicity vs. Flexibility in High-Level Machine Learning Frameworks</a></li>
+</ol>
+
+
+  </article>
+
+  
+
+</div>
+
+      </div>
+    </div>
+
+    <!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<!-- Load Common JS -->
+<script src="/assets/js/common.js"></script>
+
+
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js"></script>
+<script src="/assets/js/katex.js"></script>
+
+
+
+
+<!-- Include custom icon fonts -->
+<link rel="stylesheet" href="/assets/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/assets/css/academicons.min.css">
+
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-106825454-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+
+  </body>
+
+</html>

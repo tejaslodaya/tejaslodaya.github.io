@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Tejas Lodaya | Activation is all you need</title>
+  <meta name="description" content="Tejas Lodaya">
+
+  
+
+  <link rel="shortcut icon" href="/assets/img/favicon.ico">
+
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/blog/2018/Activation-is-all-you-need/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    
+    <span class="site-title">
+        
+        <strong>Tejas</strong> Lodaya
+    </span>
+    
+
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+      <div class="trigger">
+        <!-- About -->
+        <a class="page-link" href="/">about</a>
+
+        <!-- CV link -->
+        <a class="page-link" href="/assets/pdf/CV.pdf">CV</a>
+
+        <!-- Blog -->
+        <a class="page-link" href="/blog/">blog</a>
+
+        <!-- Pages -->
+        
+          
+        
+          
+        
+          
+        
+          
+            <a class="page-link" href="/projects/">open source</a>
+          
+        
+          
+        
+          
+        
+
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Activation is all you need</h1>
+    <p class="post-meta">February 1, 2018</p>
+  </header>
+
+  <article class="post-content">
+    <ul>
+  <li><a href="#activation">Activation functions</a></li>
+  <li><a href="#cheatsheet">Cheatsheet</a></li>
+  <li><a href="#sigmoid">Sigmoid activation</a></li>
+  <li><a href="#relu">Rectified Linear Unit</a></li>
+  <li><a href="#qna">QnA on ReLU</a></li>
+  <li><a href="#references">References</a></li>
+</ul>
+
+<h3 id="activation">Activation functions</h3>
+<hr />
+<ul>
+  <li>What: Activation functions are mapping functions that take a single number and perform a certain fixed mathematical operation on it, generally inducing non-linearity.</li>
+  <li>Why: They are used to flexibly squash the input through a function and pave the way recovering a higher-level abstraction structure. They partition the input space and regress towards the desired outcome.</li>
+</ul>
+
+<h3 id="cheatsheet">Cheatsheet</h3>
+<hr />
+<p><img src="https://cdn-images-1.medium.com/1*rIiBaH5IMVPaE5BM-n7VZw.png" alt="" /></p>
+
+<h3 id="sigmoid">Sigmoid activation</h3>
+<hr />
+<p>Sigmoid takes a real-valued number and “squashes” it into a range between 0 and 1. In particular, large negative numbers become 0 and large positive numbers become 1. The sigmoid function has seen frequent use historically since it has a nice interpretation as the firing rate of a neuron: from not firing at all (0) to fully-saturated firing at an assumed maximum frequency (1). In practice, the sigmoid non-linearity has recently fallen out of favor and it is rarely ever used.</p>
+
+<p>Drawbacks of sigmoid:</p>
+<ul>
+  <li><strong>Sigmoids saturate and kill gradients</strong>: A very undesirable property of the sigmoid neuron is that when the neuron’s activation saturates at either tail of 0 or 1, the gradient at these regions is almost zero. Recall that during backpropagation, this (local) gradient will be multiplied by the gradient of this gate’s output for the whole objective. Therefore, if the local gradient is very small, it will effectively “kill” the gradient and almost no signal will flow through the neuron to its weights and recursively to its data. Additionally, one must pay extra caution when initializing the weights of sigmoid neurons to prevent saturation. For example, if the initial weights are too large then most neurons would become saturated and the network will barely learn.</li>
+  <li><strong>Sigmoid outputs are not zero-centered</strong>: If the data received is not zero-centered, data would always be positive in case of sigmoid (ref: cheatsheet). During backpropagation, it makes the gradient on weights <code class="language-plaintext highlighter-rouge">w</code> to become all positive, or all negative. This introduces undesirable zig-zag dynamics in the gradient update for weights. However, when batch-gradient descent is used, gradients are added up across a batch of data, with weights showing variable signs, mitigating this issue.</li>
+</ul>
+
+<h3 id="relu">Rectified Linear Unit</h3>
+<hr />
+<p>The Rectified Linear Unit has become very popular in the last few years. It computes the function <code class="language-plaintext highlighter-rouge">f(x)=max(0,x)</code>. In other words, the activation is simply thresholded at zero (ref: cheatsheet).</p>
+
+<h3 id="qna">QnA on ReLU</h3>
+<hr />
+
+<h4 id="why-is-it-better-to-have-gradient-1-relu-rather-than-arbitrarily-small-positive-value-sigmoid">Why is it better to have gradient 1 (ReLU) rather than arbitrarily small positive value (sigmoid)?</h4>
+<p>Because the gradient flows <strong>perfectly(100%)</strong> through the nodes during weight-updation and backpropagation, compared to a small percentage in sigmoid</p>
+<hr />
+
+<h4 id="the-derivative-of-relu-is-exactly-0-when-the-input-is-smaller-than-0-which-causes-the-unit-to-never-activate-rendering-it-forever-useless-possible-explanations-for-why-relu-still-works-really-good">The derivative of ReLU is exactly 0 when the input is smaller than 0, which causes the unit to never activate, rendering it forever useless. Possible explanations for why ReLU still works really good?</h4>
+<ul>
+  <li>Rectifier activation function allows a network to easily obtain sparse representations. For example, after uniform initialization of the weights, around 50% of hidden units continuous output values are real zeros, and this fraction can easily increase with sparsity-inducing regularization.</li>
+  <li>Advantages of sparsity:
+    <ul>
+      <li><strong>Information disentangling</strong>:  One of the claimed objectives of deep learning algorithms is to disentangle the factors explaining the variations in the data. A dense representation is highly entangled because almost any change in the input modifies most of the entries in the representation vector. Instead, if a representation is sparse it’ll be robust to small input changes. Sparse model creates an effect similar to regularization, where the main motive is to spread the weights rather than cluster around one particular node.</li>
+      <li><strong>Efficient variable-size representation</strong>: Different inputs may contain different amounts of information and would be more conveniently represented using a variable-size data-structure, which is common in computer representations of information. Varying the number of active neurons allows a model to control the effective dimensionality of the representation for a given input and the required precision.</li>
+      <li><strong>Linear separability</strong>: Sparse representations are also more likely to be linearly separable, or more easily separable with less non-linear machinery, simply because the information is represented in a high-dimensional space. Besides, this can reflect the original data format. In text-related applications, for instance, the original raw data is already very sparse.</li>
+    </ul>
+  </li>
+</ul>
+<hr />
+
+<h4 id="the-sparsity-achieved-in-relu-is-similar-to-the-vanishingly-small-gradients-which-vanish-to-values-around-0-how-is-it-advantageous-for-relu-and-a-disadvantage-to-sigmoid">The sparsity achieved in ReLU is similar to the vanishingly small gradients which vanish to values around 0. How is it advantageous for ReLU and a disadvantage to sigmoid?</h4>
+<p>Sigmoid is a bell curve with derivatives(gradients) going to 0 on both sides of the axes. For weight updation, usually many gradients are multiplied together, making the overall product very near to 0, giving the network no chance to recover. In case of ReLU, the gradient is +ve on one side of the axis, and some gradients going to zero on the other side of axis resulting in a few dead nodes. This gives the network a chance to recover since some gradients are positive.</p>
+<hr />
+
+<h4 id="what-is-the-dying-relu-problem-and-solutions-to-combat-that">What is the dying ReLU problem and solutions to combat that?</h4>
+<p>A “dead” ReLU always outputs the same value (zero as it happens, but that is not important) for any input. In turn, that means that it takes no role in discriminating between inputs. For classification, you could visualize this as a decision plane outside of all possible input data. Once a ReLU ends up in this state, it is unlikely to recover, because the function gradient at 0 is also 0, so gradient descent learning will not alter the weights. <br /></p>
+
+<p>Solution:  <br />
+Leaky ReLUs are one attempt to fix the “dying ReLU” problem. Instead of the function being zero when x &lt; 0, a leaky ReLU will instead have a small negative slope (of 0.01, or so)</p>
+
+<h3 id="references"> References </h3>
+<hr />
+<ol>
+  <li><a href="http://cs231n.github.io/neural-networks-1/#actfun">http://cs231n.github.io/neural-networks-1/#actfun</a></li>
+  <li><a href="https://datascience.stackexchange.com/questions/5706/what-is-the-dying-relu-problem-in-neural-networks">https://datascience.stackexchange.com/questions/5706/what-is-the-dying-relu-problem-in-neural-networks</a></li>
+  <li><a href="https://stats.stackexchange.com/questions/176794/how-does-rectilinear-activation-function-solve-the-vanishing-gradient-problem-in/176905#176905">https://stats.stackexchange.com/questions/176794/how-does-rectilinear-activation-function-solve-the-vanishing-gradient-problem-in/176905#176905</a></li>
+</ol>
+
+  </article>
+
+  
+
+</div>
+
+      </div>
+    </div>
+
+    <!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<!-- Load Common JS -->
+<script src="/assets/js/common.js"></script>
+
+
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js"></script>
+<script src="/assets/js/katex.js"></script>
+
+
+
+
+<!-- Include custom icon fonts -->
+<link rel="stylesheet" href="/assets/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/assets/css/academicons.min.css">
+
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-106825454-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+
+  </body>
+
+</html>

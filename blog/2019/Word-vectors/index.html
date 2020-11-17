@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Tejas Lodaya | Word vectors</title>
+  <meta name="description" content="Tejas Lodaya">
+
+  
+
+  <link rel="shortcut icon" href="/assets/img/favicon.ico">
+
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/blog/2019/Word-vectors/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    
+    <span class="site-title">
+        
+        <strong>Tejas</strong> Lodaya
+    </span>
+    
+
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+      <div class="trigger">
+        <!-- About -->
+        <a class="page-link" href="/">about</a>
+
+        <!-- CV link -->
+        <a class="page-link" href="/assets/pdf/CV.pdf">CV</a>
+
+        <!-- Blog -->
+        <a class="page-link" href="/blog/">blog</a>
+
+        <!-- Pages -->
+        
+          
+        
+          
+        
+          
+        
+          
+            <a class="page-link" href="/projects/">open source</a>
+          
+        
+          
+        
+          
+        
+
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Word vectors</h1>
+    <p class="post-meta">April 23, 2019</p>
+  </header>
+
+  <article class="post-content">
+    <ul>
+  <li><a href="#words">Words</a></li>
+  <li><a href="#representation">Representation</a>
+    <ul>
+      <li><a href="#bow">Bag of words</a></li>
+      <li><a href="#ds">Distributional semantics</a></li>
+    </ul>
+  </li>
+  <li><a href="#w2v">Word2vec</a></li>
+  <li><a href="#prob">Probability model</a></li>
+  <li><a href="#objfunc">Objective function</a></li>
+  <li><a href="#graddesc">Gradient descent</a></li>
+  <li><a href="#practicaldiff">Practical difficulties</a>
+    <ul>
+      <li><a href="#hisoftmax">Hierarchical softmax</a></li>
+      <li><a href="#negsample">Negetive sampling</a></li>
+    </ul>
+  </li>
+  <li><a href="#subsample">Subsampling</a></li>
+  <li><a href="#references">References</a></li>
+</ul>
+
+<h3 id="words"> Words </h3>
+<hr />
+<p>“meaning” is the idea that a person wants to express by using words, signs, etc. Every conversation between two humans comprise a bunch of words, which are used to convey meaning. But plain <em>strings</em> don’t contain much information by themselves, and are of negligable use for the computer. There has to be a representation which converts words to a set of integers, understandable by computers.</p>
+
+<h3 id="representation"> Representation </h3>
+<hr />
+<p>The first and arguably most important common denominator across all NLP tasks is how we represent words as input to any of our models. Early NLP works treat words as atomic symbols. Recent works treat words as to contain some notion of similarity and difference between words</p>
+
+<h4 id="bow"> Bag of words </h4>
+<p>This approach considers each word as a seperate entity where the order doesn’t matter. One example of bag of words approach was one-hot encoders which had one vector for each word. 1s occured where the word occured, 0s occured where the word didn’t occur.</p>
+
+<p>Disadvantages:</p>
+
+<ol>
+  <li>Huge vocabulary - infinite space of words. As and when the model sees new words, it adds additional 0 to the 2-D matrix. The 2-D matrix formed is in the form of word * exists</li>
+  <li>No natural notion of similarity - two words which are similar have orthogonal vectors.</li>
+</ol>
+
+<h4 id="ds"> Distributional semantics </h4>
+<p>In order to combat the disadvatages of above approach, distributional sematic approach was introduced, where the word’s meaning is given by words that appear close-by. Some models of this approach are word2vec, GLoVE.</p>
+
+<h3 id="w2v"> Word2vec </h3>
+<hr />
+<p>This approach belongs to a class of algorithms known as predictor-corrector or iterative-update algorithms. It conserves the sequence of words (as opposed to bag of words). There exist two variants of word2vec depending on the input and output. CBoW (continuous bag of words) and skip-gram.</p>
+
+<p>Working of the model:</p>
+
+<ol>
+  <li>To start off with, we initialize all vectors randomly</li>
+  <li>Objective is given the center word <em>c</em>, predict the outside word <em>o</em> : skipgram model.</li>
+  <li>To find the closeness between two words, finding cosine similarity or dot product should suffice. In ideal cases, dot product between <script type="math/tex">W_o</script> and <script type="math/tex">W_c</script> should be 1, since <em>o</em> and <em>c</em> are next to each other. In real world scenarios, dot product isn’t exactly 1, resulting in delta. Given this delta, we backpropagate and push the word vectors towards one another.</li>
+</ol>
+
+<h3 id="prob">Probability model</h3>
+<hr />
+<p>Joint probability represented by the product of probability of outer words <em>o</em> in the  window <em>m</em> given center word <em>c</em>.</p>
+
+<script type="math/tex; mode=display">L(\theta)=\prod_{t=1}^{T} \prod_{-m \leq j \leq m \atop j \neq 0} P\left(w_{t+j} | w_{t} ; \theta\right)</script>
+
+<p>where,</p>
+
+<script type="math/tex; mode=display">P(o | c)=\frac{\exp \left(u_{o}^{T} v_{c}\right)}{\sum_{w \in V} \exp \left(u_{w}^{T} v_{c}\right)}</script>
+
+<p>Dissecting the above equation, dot product signifies how close two words are towards each other. If two words are exactly the same, dot product is 1. If two words are not at all correlated, dot product is -1.</p>
+
+<p>Numerator signifies the relative closeness of outer word with respect to center word. Denominator signifies the relative closeness of all words in the dictionary with respect to center word. This equation resembles softmax where we normalize the closeness on a scale from 0 to 1, to give a probability distribution over entire vocabulary. Exponentiation is used to eradicate possible negetive sign arising from the dot product</p>
+
+<h3 id="objfunc">Objective function</h3>
+<hr />
+<p>The ultimate objective of the loss function is to minimize negetive log likelihood. Minimizing negetive log likelihood indirectly means maximizing log likelihood.</p>
+
+<p><img src="/assets/img/word/gradient_descent.png" alt="gradient_descent" width="40%" height="40%" /></p>
+
+<h4> Why not maximize positive likelihood?</h4>
+<p>Convex functions shoot up at either ends and have a slope (derivative) of 0 at the center of the curve. Research suggests that it is easy to reach this point using efficient gradient descent. Minimization helps us find global minima in convex functions. If suppose maximization would’ve been used, it’ll shoot up on both ends of the convex function.</p>
+
+<p>Other way of looking at it is, minimizing objective function is equivalent to  maximizing predictive accuracy.</p>
+
+<h4> Why log? </h4>
+<p>Vanilla average likelihood is not normalized and can range from 0 to huge powers of 10. To keep the values consistent, logarithms are a good scale.</p>
+
+<h3 id="graddesc">Gradient descent</h3>
+<hr />
+<p>As mentioned above, word2vec belongs to a class of algorithms known as iterative-update algorithms. Gradient descent step performs the iterative update as given by the formula below</p>
+
+<p><img src="/assets/img/word/gradient_descent.png" alt="gradient_descent" width="40%" height="40%" /></p>
+
+<p>Let’s take a precise example for <script type="math/tex">v_c</script> (vector for center word).</p>
+
+<p><img src="/assets/img/word/gd2.png" alt="gradient_descent" width="40%" height="40%" /></p>
+
+<p>The summation term is weighted representation of each word multiplied with the probability in current model, summed over entire vocabulary. This is also called <strong>expectation</strong>. The term in curly braces signify the difference between observed representation of outer word and expected representation of what model thinks outer word should be.</p>
+
+<p>Two scenarios expected:</p>
+
+<ol>
+  <li>If expected is larger than observed, difference is negetive and the model adjusts weights such that <em>new</em> expected is lesser than <em>old</em>.</li>
+  <li>If expected is smaller than observed, difference is positive and the model adjusts weights such that <em>new</em> expected is larger than <em>old</em>.</li>
+</ol>
+
+<h4> Why negetive gradient </h4>
+<p><img src="/assets/img/word/curve.png" alt="_config.yml" /></p>
+
+<p>Ultimate motive of gradient descent is to bring derivate to zero, at the bottom of convex curve. This also leads the expectation to be closer to observed. There are two scenarios:</p>
+
+<ol>
+  <li>When the derivative is positive, means the expected is larger than observed. Weight update should <strong>decrease</strong> the expected towards the center of convex curve – refer x-axis and gradient update formula</li>
+  <li>When the derivative is negetive, means the expected is smaller than observed. Weight update should <strong>increase</strong> the expected towards the center of convex curve – refer x-axis and gradient update formula</li>
+</ol>
+
+<h3 id="practicaldiff">Practical difficulties </h3>
+<hr />
+<p>The probability model, <script type="math/tex">P(o | c)=\frac{\exp \left(u_{o}^{T} v_{c}\right)}{\sum_{w \in V} \exp \left(u_{w}^{T} v_{c}\right)}</script>
+is impractical since the cost of computing the denominator is proportional to the vocabulary size. This model was first proposed by the authors of word2vec, and further optimizations were designed inorder to make it computationally scalable.</p>
+
+<h4 id="hisoftmax"> Hierarchical softmax </h4>
+
+<p>This is computationally efficient approximation of full softmax. In full softmax, we evaluate <code class="language-plaintext highlighter-rouge">V</code> vocabulary words to obtain a probability distribution. Hierarchical softmax constructs a binary tree where the leaves are V words and each <em>walk</em> defines which words are used to compute probability distribution. This operation takes <code class="language-plaintext highlighter-rouge">log(V)</code> since tree traversal is <code class="language-plaintext highlighter-rouge">O(logN)</code>.</p>
+
+<h4 id="negsample"> Negetive sampling </h4>
+
+<p>In this case, we train a binary logistic regression where in, for a true pair (i.e, center word and outer words in context) the score is 1, where as for noise pair (i.e, center word + random word other than context words) the score is 0. The network should be able to differentiate between negetive pair and positive pair.</p>
+
+<p>The cost function is <script type="math/tex">J_{t}(\theta)=\log \sigma\left(u_{o}^{T} v_{c}\right)+\sum_{i=1}^{k} \mathbb{E}_{j \sim P(w)}\left[\log \sigma\left(-u_{j}^{T} v_{c}\right)\right]</script></p>
+
+<p>In the above equation, we want to maximize the probability of outside word co-occuring with center word (1st log) and decrease the probability of random word co-occuring with center word (2nd log). We pick <code class="language-plaintext highlighter-rouge">k</code> samples from the probability distribution over vocabulary words.</p>
+
+<p>But as seen, we can’t maximize the log probability in convex functions, but minimize the negetive log probability. Remodelled equation looks like this, <script type="math/tex">J_{n e g-\text {sample}}\left(\boldsymbol{o}, \boldsymbol{v}_{c}, \boldsymbol{U}\right)=-\log \left(\sigma\left(\boldsymbol{u}_{o}^{\top} \boldsymbol{v}_{c}\right)\right)-\sum_{k=1}^{K} \log \left(\sigma\left(-\boldsymbol{u}_{k}^{\top} \boldsymbol{v}_{c}\right)\right)</script></p>
+
+<p>We want to minimize the cost function J, therefore minimizing the negetive log probability (increasing the probability of outside word co-occuring with center word) and minimize the negetive log of negetive number (means decreasing the probability of random word co-occuring with center word).</p>
+
+<p>The probability with which we pick random negetive pairs is: <script type="math/tex">\mathrm{P}(w)=U(w)^{3 / 4} / Z</script></p>
+
+<p>where <script type="math/tex">U(w)</script> is the unigram distribution. 3/4 power makes the less frequent words be sampled more often compared to frequent words being sampled less often. The higher the frequency of the word, the lesser the changes of it getting picked for negetive sampling.</p>
+
+<h3 id="subsample"> Subsampling </h3>
+<hr />
+<p>Model benefits from observing the co-occurrences of “France” and“Paris”. It benefits much less from observing the frequent co-occurrences of “France” and “the”, as nearly every word co-occurs frequently within a sentence with “the”. Frequent words like the, and, etc.. carry little meaning but co-occur with many words.</p>
+
+<p>To counter the imbalance between the rare and frequent words, use a simple subsampling approach where in, subsample (downsample) frequently occuring words. The probability of deleting a word is directly proportional to the frequency of the word which means the word occuring way too frequently has a high probability of getting deleted.</p>
+
+<h3 id="references"> References </h3>
+<hr />
+
+<ol>
+  <li><a href="http://web.stanford.edu/class/cs224n/readings/cs224n-2019-notes01-wordvecs1.pdf">http://web.stanford.edu/class/cs224n/readings/cs224n-2019-notes01-wordvecs1.pdf</a></li>
+  <li><a href="https://www.youtube.com/watch?v=kEMJRjEdNzM&amp;list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z&amp;index=2">https://www.youtube.com/watch?v=kEMJRjEdNzM&amp;list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z&amp;index=2</a></li>
+  <li><a href="https://stats.stackexchange.com/questions/141087/i-am-wondering-why-we-use-negative-log-likelihood-sometimes">https://stats.stackexchange.com/questions/141087/i-am-wondering-why-we-use-negative-log-likelihood-sometimes</a></li>
+  <li><a href="https://medium.com/@aerinykim/why-do-we-subtract-the-slope-a-in-gradient-descent-73c7368644fa">https://medium.com/@aerinykim/why-do-we-subtract-the-slope-a-in-gradient-descent-73c7368644fa</a></li>
+  <li><a href="http://mccormickml.com/2017/01/11/word2vec-tutorial-part-2-negative-sampling/">http://mccormickml.com/2017/01/11/word2vec-tutorial-part-2-negative-sampling/</a></li>
+</ol>
+
+
+  </article>
+
+  
+
+</div>
+
+      </div>
+    </div>
+
+    <!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<!-- Load Common JS -->
+<script src="/assets/js/common.js"></script>
+
+
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js"></script>
+<script src="/assets/js/katex.js"></script>
+
+
+
+
+<!-- Include custom icon fonts -->
+<link rel="stylesheet" href="/assets/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/assets/css/academicons.min.css">
+
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-106825454-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+
+  </body>
+
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Tejas Lodaya | Building a spatial querying and data manipulation engine</title>
+  <meta name="description" content="Tejas Lodaya">
+
+  
+
+  <link rel="shortcut icon" href="/assets/img/favicon.ico">
+
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/blog/2020/Spatial-querying-and-data-manipulation-engine/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    
+    <span class="site-title">
+        
+        <strong>Tejas</strong> Lodaya
+    </span>
+    
+
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+      <div class="trigger">
+        <!-- About -->
+        <a class="page-link" href="/">about</a>
+
+        <!-- CV link -->
+        <a class="page-link" href="/assets/pdf/CV.pdf">CV</a>
+
+        <!-- Blog -->
+        <a class="page-link" href="/blog/">blog</a>
+
+        <!-- Pages -->
+        
+          
+        
+          
+        
+          
+        
+          
+            <a class="page-link" href="/projects/">open source</a>
+          
+        
+          
+        
+          
+        
+
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Building a spatial querying and data manipulation engine</h1>
+    <p class="post-meta">October 5, 2020</p>
+  </header>
+
+  <article class="post-content">
+    <ul>
+  <li><a href="#intro">Introduction</a></li>
+  <li><a href="#requirements">Basic requirements</a></li>
+  <li><a href="#query">Query support</a></li>
+  <li><a href="#example">Example use-cases</a></li>
+  <li><a href="#whynot">Why not x?</a>
+    <ul>
+      <li><a href="#post">Why not PostgreSQL + PostGIS?</a></li>
+      <li><a href="#hadoop">Why not Hadoop-GIS or Spatial Hadoop?</a></li>
+      <li><a href="#spark">Why not LocationSpark, GeoSpark (Apache Sedona), Magellan, SpatialSpark?</a></li>
+      <li><a href="#geomesa">Why GeoMesa?</a></li>
+    </ul>
+  </li>
+  <li><a href="#conclusion">Conclusion</a></li>
+  <li><a href="#refer">References</a></li>
+</ul>
+
+<h3 id="intro">Introduction</h3>
+
+<p>Spatial computing and emergence of massive scale spatial data is becoming increasingly important with the proliferation of mobile devices, cost effective and ubiquitous positioning technologies, development of high resolution imaging technologies, and contribution from a large number of community users. With startups like Uber, Instacart, Grubhub generating, ingesting, storing and processing massive amounts of spatial data, leading the spatial data revolution. However, the needs of storing and processing large-scale spatial data are poorly met by current general-purpose storage systems and calls for a more efficient spatio-temporal data management system.</p>
+
+<p>In this blog-post, we’ll talk about the do’s and don’ts of location data management and explore possible ways of storing and retrieving OpenStreetMap (OSM) data into the big-data ecosystem.</p>
+
+<h3 id="requirements">Basic requirements</h3>
+
+<ol>
+  <li><strong>Ease of use, versatile</strong> - easy querying and retrieving data as Spark dataframes, with robust APIs for Scala, Python and SparkSQL</li>
+  <li><strong>Cost effective</strong> - avoid storage of data in RDS or in-memory due to exorbitant cost of keeping the instance up all the time. Disk-based storage (AWS S3) or cold storage (AWS Glacier) preferred</li>
+  <li><strong>Fault tolerant</strong>  - continue to operate even in the presence of node failures. Avoid single-node RDS monoliths.</li>
+  <li><strong>Fast, interactive querying</strong> - ability to run interactive analytic queries with compute being horizontally scalable, rather than vertical.</li>
+</ol>
+
+<h3 id="query">Query support</h3>
+
+<ol>
+  <li><strong>kNN queries</strong>- takes a set of points R, a query point q, and an integer k ≥ 1 as input, and finds the k nearest points in R to q</li>
+  <li><strong>Range queries</strong> - takes range R and a set of geometric objects S, and returns all objects in S that lie in the range R</li>
+  <li><strong>Spatial joins</strong> - takes two input sets of spatial records R and S and a join predicate θ (e.g., <em>overlap, intersect, contains</em>, etc..)</li>
+  <li><strong>Distance joins</strong> - special case of spatial join where the join predicate is <em>withindistance</em></li>
+</ol>
+
+<h3 id="example">Example use-cases</h3>
+
+<ol>
+  <li><strong>Traffic analysis</strong> - hourly speed profile of the entire city, with a formula of distance/time between successive pings, uses <em>st_distanceSpheroid</em></li>
+  <li><strong>Map matching</strong> - snaps driver’s noisy GPS coordinates to the underlying road network using stochastic state space models, uses <em>st_distance</em></li>
+  <li><strong>Polygon coverage</strong> - find number of trips originating from a polygon over total number of trips, uses <em>st_contains</em></li>
+  <li><strong>Address distribution</strong> - find the number of customer addresses within x meters of each other, uses <em>st_distanceSphere</em></li>
+</ol>
+
+<p><br />
+Pictorically, 
+<br />
+<br />
+<img src="/assets/img/geomesa.png" alt="geomesa" width="70%" height="50%" /></p>
+
+<p><em> Figure 1: Representation of data warehouses and querying engines</em></p>
+
+<h3 id="whynot">Why not x?</h3>
+
+<p>Geospatial querying can be accomplished by PostgreSQL with PostGIS extension, Spatial Hadoop, LocationSpark and GeoMesa.</p>
+
+<h4 id="post">Why not PostgreSQL + PostGIS?</h4>
+
+<ol>
+  <li>PostgreSQL as a datastore is not horizontally scalable, only vertically scalable. This can cause potential bottlenecks when terabytes of data is stored and analysed.</li>
+  <li>The Spark-JDBC connector used to convert PostgreSQL results back to Spark dataframe implements query-pushdown. At large-scale, this design makes PostgreSQL I/O bound rather than compute-bound.</li>
+  <li>Fails to leverage the power of distributed memory and cost-effectiveness of big-data.</li>
+  <li>Susceptible to failures, since this is a single node, vertically scalable RDS monolith</li>
+</ol>
+
+<p>Full performance comparison is published at VLDB 2013, as part of <a href="http://www.vldb.org/pvldb/vol6/p1009-aji.pdf">Hadoop-GIS: A High Performance Spatial Data Warehousing System over MapReduce</a> benchmarks.</p>
+
+<h4 id="hadoop">Why not Hadoop-GIS or Spatial Hadoop?</h4>
+
+<p>Hadoop-GIS is unable to reuse intermediate data and writes intermediate results back to HDFS. (not just Hadoop-GIS, but Hadoop in general).</p>
+
+<h4 id="spark">Why not LocationSpark, GeoSpark (Apache Sedona), Magellan, SpatialSpark?</h4>
+
+<p>To address the challenges faced by Hadoop, in-memory cluster computing frameworks for processing large-scale spatial data were developed based on Spark.</p>
+
+<ol>
+  <li><strong>Apache Sedona</strong> - still in incubation and active development, no kNN joins</li>
+  <li><strong>LocationSpark</strong> - limited data types, no recent development</li>
+  <li><strong>Magellan</strong> - high shuffle costs, no range query optimizations</li>
+  <li><strong>SpatialSpark</strong> - high memory costs, no recent development</li>
+</ol>
+
+<p>For a detailed analysis, please refer to <a href="http://www.vldb.org/pvldb/vol11/p1661-pandey.pdf">How Good Are Modern Spatial Analytics Systems? - VLDB ‘18</a></p>
+
+<h4 id="geomesa">Why GeoMesa?</h4>
+
+<p>GeoMesa provides a suite of tools to manage and analyze huge spatio-temporal datasets and is a full-fledged platform.</p>
+
+<ol>
+  <li>Provides support for near real time stream processing of spatio-temporal data by layering on top of Apache Kafka</li>
+  <li>Supports a host of data-stores like Cassandra, Bigtable, Redis, FileSystem (S3, HDFS), Kafka and Accumulo.</li>
+  <li>Supports Spark Analytics, with robust APIs for Scala-spark, SparkSQL and PySpark - can be used only for distributed querying and analytical needs.</li>
+  <li>Horizontally scalable (add more nodes to add more capacity)</li>
+  <li>Provides JSON, Parquet, Shapefile converters for ingesting data into GeoMesa</li>
+  <li>Mature and under active development, with community support (7 years old, <a href="https://github.com/locationtech/geomesa/releases/tag/geomesa_2.11-3.1.0">latest 3.1.0 release</a> on 28th October, 2020)</li>
+</ol>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>GeoMesa seems a clear winner and checks all the requirements for a fully-stable, cost-effective, fault tolerant, large-scale geospatial analytics platform.</p>
+
+<p>Some advice on how to set-up :</p>
+
+<ol>
+  <li>Choose AWS S3, Hadoop HDFS, Google FileStorage or Azure BlobStore as the datastore, depending on the rest of your environment</li>
+  <li>Partition the data into folders, by date, by city or by country, depending on your scale and use-case</li>
+  <li>Create a cron job to download OSM data from <a href="http://download.geofabrik.de/">here</a> (to avoid staleness, say weekly)</li>
+  <li>Ingest and convert data obtained from #3 into GeoMesa format, index and store it</li>
+  <li>Use the <a href="https://www.geomesa.org/documentation/stable/user/spark/providers.html#filesystem-rdd-provider">FileSystem RDD Provider</a> inside GeoMesa Spark and run any spark based spatial workloads!</li>
+</ol>
+
+<h3 id="refer">References</h3>
+
+<ol>
+  <li>[Code] <a href="https://databricks.com/notebooks/GeoMesa-NYC-Taxis.html">GeoMesa - NYC Taxis</a>, <a href="https://databricks.com/notebooks/geomesa-h3-notebook.html">GeoMesa + H3 Notebook</a></li>
+  <li>[Paper] <a href="http://www.vldb.org/pvldb/vol6/p1009-aji.pdf">Hadoop-GIS: A High Performance Spatial Data Warehousing System over MapReduce</a></li>
+  <li>[Book] <a href="https://dl.acm.org/doi/book/10.1145/2886107">An Architecture for Fast and General Data Processing on Large Clusters - M.  Zaharia - ACM ‘16</a></li>
+  <li>[Benchmark] <a href="https://www.reply.com/en/topics/big-data-and-analytics/Shared%20Documents/DSTL-Report-Data-Reply-2017.pdf">Benchmarking of Big Data Technologies for Ingesting and Querying Geospatial Datasets</a></li>
+  <li>[Benchmark]  <a href="http://www.vldb.org/pvldb/vol11/p1661-pandey.pdf">How Good Are Modern Spatial Analytics Systems?</a></li>
+  <li>[Github] <a href="https://github.com/locationtech/geomesa">locationtech/geomesa</a>, <a href="https://github.com/apache/incubator-sedona/">apache/incubator-sedona</a></li>
+</ol>
+
+  </article>
+
+  
+
+</div>
+
+      </div>
+    </div>
+
+    <!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<!-- Load Common JS -->
+<script src="/assets/js/common.js"></script>
+
+
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js"></script>
+<script src="/assets/js/katex.js"></script>
+
+
+
+
+<!-- Include custom icon fonts -->
+<link rel="stylesheet" href="/assets/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/assets/css/academicons.min.css">
+
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-106825454-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+
+  </body>
+
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Tejas Lodaya | Problems with softmax</title>
+  <meta name="description" content="Tejas Lodaya">
+
+  
+
+  <link rel="shortcut icon" href="/assets/img/favicon.ico">
+
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/blog/2017/Problems-with-softmax/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    
+    <span class="site-title">
+        
+        <strong>Tejas</strong> Lodaya
+    </span>
+    
+
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+      <div class="trigger">
+        <!-- About -->
+        <a class="page-link" href="/">about</a>
+
+        <!-- CV link -->
+        <a class="page-link" href="/assets/pdf/CV.pdf">CV</a>
+
+        <!-- Blog -->
+        <a class="page-link" href="/blog/">blog</a>
+
+        <!-- Pages -->
+        
+          
+        
+          
+        
+          
+        
+          
+            <a class="page-link" href="/projects/">open source</a>
+          
+        
+          
+        
+          
+        
+
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Problems with softmax</h1>
+    <p class="post-meta">December 14, 2017</p>
+  </header>
+
+  <article class="post-content">
+    <ul>
+  <li><a href="#introduction">Introduction</a>
+    <ul>
+      <li><a href="#multinoulli">Multinoulli Distribution</a></li>
+      <li><a href="#softmax">Softmax Regression</a></li>
+    </ul>
+  </li>
+  <li><a href="#undernover">Underflow and Overflow</a></li>
+  <li><a href="#conclusion">Conclusion</a></li>
+  <li><a href="#reference">References</a></li>
+</ul>
+
+<h3 id="introduction">Introduction</h3>
+<hr />
+
+<ul>
+  <li>
+    <h6 id="multinoulli"> Multinoulli Distribution </h6>
+    <p>The multinoulli, or categorical, distribution is a distribution over a single discrete variable with <code class="language-plaintext highlighter-rouge">k</code> diﬀerent states, where <code class="language-plaintext highlighter-rouge">k</code> is ﬁnite. Multinoulli distributions are often used to refer to distributions over categories of objects.</p>
+  </li>
+  <li>
+    <h6 id="softmax"> Softmax Regression </h6>
+    <p>The softmax function is used to predict the probabilities associated with a multinoulli distribution. Softmax regression (or multinomial logistic regression) is a generalization of logistic regression to the case where we want to handle multiple classes. In logistic regression we assumed that the labels were binary: <code class="language-plaintext highlighter-rouge">y(i)∈{0,1}</code>. We used such a classifier to distinguish between two kinds of hand-written digits. Softmax regression allows us to handle <code class="language-plaintext highlighter-rouge">y(i)∈{1,…,K}</code> where K is the number of classes. In the special case where <code class="language-plaintext highlighter-rouge">K=2</code>, one can show that softmax regression reduces to logistic regression.</p>
+
+    <p><img src="https://render.githubusercontent.com/render/math?math=softmax(x)_i=%20%5Cfrac{exp(x_i)}{\%20%5Csum_{j=1}^n%20%5Cexp(x_j)}&amp;mode=display" alt="" /></p>
+  </li>
+</ul>
+
+<h3 id="undernover"> Underflow and Overflow</h3>
+<hr />
+
+<p>Underflow occurs when numbers near zero are rounded to zero. We usually want to avoid division by zero or taking the logarithm of zero.
+Overflow occurs when numbers with large magnitude are approximated as ∞ or -∞. Further arithmetic will usually change these infinite values into not-a-number values.</p>
+
+<p>Using equation above, let’s consider these scenarios:</p>
+
+<ol>
+  <li>When all <img src="https://render.githubusercontent.com/render/math?math=x_i&amp;mode=display" alt="" /> are equal to some constant <code class="language-plaintext highlighter-rouge">c</code>. Analytically, all outputs should be equal to <code class="language-plaintext highlighter-rouge">1/n</code>. Numerically, this may not occur when <code class="language-plaintext highlighter-rouge">c</code> has a large magnitude. If <code class="language-plaintext highlighter-rouge">c</code> is very negative, exp(c) will turn to zero (underflow). This means denominator of the softmax will be 0, making the final result undefined.</li>
+  <li>When <code class="language-plaintext highlighter-rouge">c</code> is very large and positive, exp(c) will turn to infinity (overflow), again resulting in the expression as a whole being undefined.</li>
+</ol>
+
+<p>Both of these difficulties can be resolved by instead evaluating softmax(z) where <img src="https://render.githubusercontent.com/render/math?math=z%20=%20x%20-%20max_i%20(x_i)&amp;mode=display" alt="" />. Simple algebra shows that the value of softmax function does not change analytically by adding or subtracting a scalar from the input vector. 
+Let’s take an example where</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>x = [1, 2, 3, 4, 5]
+max(x) = 5
+z = x - max(x) = [-4, -3, -2, -1, 0]
+</code></pre></div></div>
+
+<p>Possibility of overflow is ruled out since <strong>largest</strong> argument to exp is 0 and <code class="language-plaintext highlighter-rouge">exp(0) = 1</code>. A possibility of underflow is also ruled out since at least one term in the denominator has a value of 1.</p>
+
+<h3 id="conclusion"> Conclusion </h3>
+<hr />
+
+<p>For the most part, developers of low-level libraries will keep in mind when implementing deep learning algorithms. In some cases, it is possible to implement a new algorithm and have the new implementation automatically stabilized. Theano, Tensorflow and Caffe are examples of software packages that automatically detect and stabilize many common numerically unstable expressions that arise in the context of deep learning.</p>
+
+<h3 id="reference"> References </h3>
+<hr />
+
+<ol>
+  <li><a href="http://www.deeplearningbook.org/contents/numerical.html">http://www.deeplearningbook.org/contents/numerical.html</a></li>
+  <li><a href="http://ufldl.stanford.edu/tutorial/supervised/SoftmaxRegression/">http://ufldl.stanford.edu/tutorial/supervised/SoftmaxRegression/</a></li>
+</ol>
+
+  </article>
+
+  
+
+</div>
+
+      </div>
+    </div>
+
+    <!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<!-- Load Common JS -->
+<script src="/assets/js/common.js"></script>
+
+
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js"></script>
+<script src="/assets/js/katex.js"></script>
+
+
+
+
+<!-- Include custom icon fonts -->
+<link rel="stylesheet" href="/assets/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/assets/css/academicons.min.css">
+
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-106825454-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+
+  </body>
+
+</html>

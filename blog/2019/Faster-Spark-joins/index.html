@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Tejas Lodaya | Faster Spark joins</title>
+  <meta name="description" content="Tejas Lodaya">
+
+  
+
+  <link rel="shortcut icon" href="/assets/img/favicon.ico">
+
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/blog/2019/Faster-Spark-joins/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    
+    <span class="site-title">
+        
+        <strong>Tejas</strong> Lodaya
+    </span>
+    
+
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+      <div class="trigger">
+        <!-- About -->
+        <a class="page-link" href="/">about</a>
+
+        <!-- CV link -->
+        <a class="page-link" href="/assets/pdf/CV.pdf">CV</a>
+
+        <!-- Blog -->
+        <a class="page-link" href="/blog/">blog</a>
+
+        <!-- Pages -->
+        
+          
+        
+          
+        
+          
+        
+          
+            <a class="page-link" href="/projects/">open source</a>
+          
+        
+          
+        
+          
+        
+
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Faster Spark joins</h1>
+    <p class="post-meta">May 6, 2019</p>
+  </header>
+
+  <article class="post-content">
+    <ul>
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#shufflehashjoin">Shuffle hash join/ reduce-side join</a></li>
+  <li><a href="#partitionBy">partitionBy</a></li>
+  <li><a href="#misc">Misc partitioning tips</a></li>
+  <li><a href="#broadcast">Broadcast join / map-side join</a></li>
+  <li><a href="#fasterjoins">Even faster map-side joins</a></li>
+  <li><a href="#filter">Filter Large RDD</a></li>
+  <li><a href="#references">References</a></li>
+</ul>
+
+<h3 id="introduction"> Introduction </h3>
+<hr />
+<p>Some of the most useful operations we get with keyed data comes from using it together with other keyed data. Joining data together is probably one of the most common operations on a pair RDD, and we have a full range of options including right and left outer joins, cross joins, and inner joins. In order to join data, spark needs each key-to-be-joined to exist on the same partition.  There are several ways to achieve co-location which are documented below</p>
+
+<h3 id="shufflehashjoin"> Shuffle hash join/ reduce-side join </h3>
+<hr />
+<p>By default, when a RDD is read from textfile or HDFS, it follows the partitioning scheme of hadoop filesystem. As seen above, a pre-requisite for join is co-location.This operation will hash all the keys of both datasets, sending elements with the same key hash across the network to the same machine, and then join together the elements with the same key on that machine.</p>
+
+<p>For example, <em>userData</em> and <em>events</em> are shuffled causing heavy network traffic.
+<img src="https://learning.oreilly.com/library/view/learning-spark/9781449359034/assets/lnsp_0404.png" width="70%" height="50%" /></p>
+
+<p>This operation is also called reduce-side join because the actual join process happens in the reduce phase. It follows the traditional map-shuffle-reduce flow.</p>
+
+<h3 id="partitionBy"> partitionBy </h3>
+<hr />
+<p>In cases where a largeRDD is used repeatedly, over and over again, shuffle-hash join would cause re-shuffling on each iteration making it costly. To avoid this, largeRDD is partitioned using RangePartitioner/HashPartitioner and spark uses this information to make the smallRDD use the same partitioner to find the partition to which the keys goes to. This way, a huge shuffle is avoided.</p>
+
+<p>Note:</p>
+
+<ol>
+  <li>Use of <em>partitionBy</em> before any action is performed on largeRDD doesn’t cost extra, since it is lazily evaluated.</li>
+  <li>Persist the RDD just after its been partitioned, if forgot would cause re-evaluation of RDD’s complete lineage</li>
+</ol>
+
+<script src="https://gist.github.com/tejaslodaya/26b8c25cbf222efc6d9d51ac7d8bfb64.js"></script>
+
+<p><img src="https://learning.oreilly.com/library/view/learning-spark/9781449359034/assets/lnsp_0405.png" width="70%" height="50%" /></p>
+
+<p>Functions other than <em>join</em> which take partitioning as advantage are <em>cogroup(), groupWith(), leftOuterJoin(), rightOuterJoin(), groupByKey(), reduceByKey(), combineByKey()</em>, and <em>lookup()</em></p>
+
+<h3 id="misc"> Misc partitioning tips </h3>
+<hr />
+<p>ShuffleHashJoin can be avoided in the below scenarios</p>
+
+<ol>
+  <li>
+    <p>Both tables use the same partitioner
+ <script src="https://gist.github.com/tejaslodaya/b02cf0b42593910a0b39a05dc761ab59.js"></script></p>
+  </li>
+  <li>
+    <p>Second RDD is a derivative of First RDD -</p>
+
+    <p>Assume First RDD is hash partitioned and Second RDD is derived by using <em>mapValues</em> on First RDD. This way, both are cached on the same machine.</p>
+  </li>
+  <li>
+    <p>If one of the RDDs is already shuffled before -</p>
+
+    <p>Many spark operations automatically result in an RDD with known partitioning information and join takes advantage of this information. For example, sortByKey and groupByKey result in a partitioned RDD, with a valid non-default partitioner.  This behaves the same way as of <code class="language-plaintext highlighter-rouge">partitionBy</code> in <a href="#partitionBy">(2)</a></p>
+
+    <p><img src="https://web.archive.org/web/20190325153819if_/https://blog.cloudera.com/wp-content/uploads/2014/03/spark-devs1.png" alt="" /></p>
+
+    <p>Above, <em>B</em> is not shuffled when joined with <em>F</em> because <em>groupBy</em> is applied on <em>B</em>.</p>
+  </li>
+</ol>
+
+<h3 id="broadcast"> Broadcast join / map-side join </h3>
+<hr />
+<p>In order to avoid the shuffle-reduce phase, join operation is delegated to map-stage where-in, one of the tables (smaller one) is broadcasted in-memory to each mapper. This works only when one of the tables is relatively small.</p>
+
+<p>Below are the steps to perform broadcast join:</p>
+
+<ol>
+  <li>Create a RDD for both tables on which join is to be performed</li>
+  <li>Download Small RDD to the driver, create <em>map</em> and broadcast on each execution node</li>
+  <li>Map over each row of Large RDD, retrieve value (from Small RDD) using key from the iterator of Large RDD.</li>
+  <li>Broadcast join will be executed concurrently for each partition since each partition has its own copy of the small RDD.</li>
+</ol>
+
+<script src="https://gist.github.com/tejaslodaya/c8219918b25b223f44dbf4d970af3463.js"></script>
+
+<h3 id="fasterjoins"> Even faster map-side joins </h3>
+<hr />
+<p>There are some scaling problems with map-side join. When thousands of mappers read the small join table from the Hadoop Distributed File System (HDFS) into memory at the same time, the join table easily becomes the performance bottleneck, causing the mappers to time out during the read operations.</p>
+
+<p>The basic idea of optimization is to create a new MapReduce local task just before the original join MapReduce task. This new task reads the small table data from HDFS to an in-memory hash table. After reading, it serializes the in-memory hash table into a hashtable file. In the next stage, when the MapReduce task is launching, it uploads this hashtable file to the Hadoop distributed cache, which populates these files to each mapper’s local disk. So all the mappers can load this persistent hashtable file back into memory and do the join work as before.</p>
+
+<p>After optimization, the small table needs to be read just once. Also if multiple mappers are running on the same machine, the distributed cache only needs to push one copy of the hashtable file to this machine.</p>
+
+<h3 id="filter"> Filter Large RDD</h3>
+<hr />
+<p>When joining an extremely large table and a subset of this table, a huge shuffle takes place. Join causes majority of the large table to drop. For example, when you’re joining two RDDs namely <em>worldRDD</em> and <em>indiaRDD</em>, a join would cause majority of <em>worldRDD</em> to drop. An extremely fast (10x speedup) is to filter the <em>worldRDD</em> using the keys of <em>indiaRDD</em> and then performing a join.</p>
+
+<p>This method is faster and causes less data to be shuffled over the network.</p>
+
+<p>Note:</p>
+
+<ol>
+  <li>Always explore the distribution of keys before performing a full-blown shufflejoin.</li>
+  <li>The efficiency gain here depends on the filter operation that reduces the size of larger RDD. If there are not a lot of entries lost here (e.g., because <em>indiaRDD</em> is some kind of large dimension table), there is nothing to be gained with this strategy</li>
+</ol>
+
+<h3 id="references"> References </h3>
+<hr />
+
+<ol>
+  <li><a href="https://stackoverflow.com/questions/34053302/pyspark-and-broadcast-join-example">https://stackoverflow.com/questions/34053302/pyspark-and-broadcast-join-example</a></li>
+  <li><a href="http://dmtolpeko.com/2015/02/20/map-side-join-in-spark/">http://dmtolpeko.com/2015/02/20/map-side-join-in-spark/</a></li>
+  <li><a href="https://www.facebook.com/notes/facebook-engineering/join-optimization-in-apache-hive/470667928919">https://www.facebook.com/notes/facebook-engineering/join-optimization-in-apache-hive/470667928919</a></li>
+</ol>
+
+  </article>
+
+  
+
+</div>
+
+      </div>
+    </div>
+
+    <!-- Load jQuery -->
+<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<!-- Load Common JS -->
+<script src="/assets/js/common.js"></script>
+
+
+<!-- Load KaTeX -->
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js"></script>
+<script src="/assets/js/katex.js"></script>
+
+
+
+
+<!-- Include custom icon fonts -->
+<link rel="stylesheet" href="/assets/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/assets/css/academicons.min.css">
+
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-106825454-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+
+
+  </body>
+
+</html>
